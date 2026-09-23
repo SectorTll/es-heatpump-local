@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1-alpha.1
+
+- A bridge that resets the TCP connection while it is being closed no longer logs a `ConnectionResetError` traceback; the channel, pending command and client counter are cleaned up as before, and reconnection works. Task cancellation is still propagated.
+- Offline test for connection teardown (reset while closing, reconnect, cancellation).
+
 ## 0.2.0-alpha.1
 
 - Settings: all 136 settings sensors are named from the myheatpump.com portal setdata labels (`<label> (parN)`): 72 `verified` against the reference installation, 56 `unverified`, 8 `unknown` (`Setting NNN`). Attributes: `portal_setdata_parameter`, `label_confidence`, `portal_label`, `options`, `value_label` (only for an exact listed whole number), `portal_range` with its source. Raw states are unchanged.

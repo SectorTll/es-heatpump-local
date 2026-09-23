@@ -7,6 +7,7 @@ SensorDeviceClass.TEMPERATURE_DELTA (older Home Assistant releases).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import enum
 import importlib
 from pathlib import Path
@@ -77,7 +78,39 @@ def install_homeassistant(with_temperature_delta: bool = True) -> None:
         def __init__(self, coordinator):
             self.coordinator = coordinator
 
-    _module("homeassistant.helpers.update_coordinator").CoordinatorEntity = CoordinatorEntity
+    class DataUpdateCoordinator:
+        def __class_getitem__(cls, item):
+            return cls
+
+        def __init__(self, hass, logger, name=None, **kwargs):
+            self.hass = hass
+            self.logger = logger
+            self.name = name
+            self.data = None
+            self.updates = []
+
+        def async_set_updated_data(self, data):
+            self.data = data
+            self.updates.append(data)
+
+    update_coordinator = _module("homeassistant.helpers.update_coordinator")
+    update_coordinator.CoordinatorEntity = CoordinatorEntity
+    update_coordinator.DataUpdateCoordinator = DataUpdateCoordinator
+    _module("homeassistant.util")
+    dt_module = _module("homeassistant.util.dt")
+    dt_module.utcnow = lambda: datetime.now(timezone.utc)
+    sys.modules["homeassistant.util"].dt = dt_module
+
+
+def load_coordinator_module(package: str) -> types.ModuleType:
+    """Import coordinator.py with the real const/parser/commands modules and stubbed Home Assistant."""
+    install_homeassistant()
+    for name in [n for n in sys.modules if n == package or n.startswith(package + ".")]:
+        del sys.modules[name]
+    pkg = types.ModuleType(package)
+    pkg.__path__ = [str(COMPONENT)]
+    sys.modules[package] = pkg
+    return importlib.import_module(f"{package}.coordinator")
 
 
 def load_sensor_module(package: str, with_temperature_delta: bool = True) -> types.ModuleType:

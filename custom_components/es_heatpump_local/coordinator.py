@@ -111,8 +111,11 @@ class ESHeatpumpLocalCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._client_counter = max(0, self._client_counter - 1)
             self._data["connected_clients"] = self._client_counter
             self.async_set_updated_data(dict(self._data))
-            writer.close()
-            await writer.wait_closed()
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except OSError as err:  # e.g. ConnectionResetError when the bridge resets the socket
+                _LOGGER.debug("ES Heatpump Local: %s closed with %r", peer_text, err)
             _LOGGER.info("ES Heatpump Local: client disconnected from %s", peer_text)
 
     async def async_test_dhw_target(self, temperature, expected_temperature):
