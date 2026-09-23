@@ -7,12 +7,21 @@ Experimental local Home Assistant integration for Energy Save (ES) heat pumps us
 ## What works
 
 - A local TCP listener receives data pushed by the heat pump bridge, without a cloud account.
-- Decodes 45 live values and 136 settings from the observed protocol. Many fields retain raw index names because their meaning is unknown.
-- Named sensors for selected temperatures, working mode, compressor speed and other mapped values.
-- Named main and reheating DHW temperature setpoints; raw settings sensors are disabled by default and can be enabled individually.
+- Decodes 45 live values and 136 settings from the observed protocol. Live values show their portal address (`portal_realdata_parameter`), a `label_confidence` and notes; unknown live values keep raw index names.
+- Named sensors for selected temperatures, working mode, compressor speed and control level, refrigerant pressures and superheat, and other mapped values.
+- Settings are named after the myheatpump.com portal labels: 72 verified against the reference installation, 56 unverified, 8 unknown. See the [field dictionary](docs/FIELDS.md). Settings sensors are disabled by default and can be enabled individually.
+- Named main and reheating DHW temperature setpoints.
 - Connection and frame diagnostics; UI setup and YAML import.
 
-The source was extracted from a working Home Assistant installation using a **USR-W600** bridge in **Transparent / Socket B TCP-Client** mode. The exact heat pump model and supported firmware matrix have not yet been documented. Compatibility with other ES models or bridges is unverified.
+The source was extracted from a working Home Assistant installation using a **USR-W600** bridge in **Transparent / Socket B TCP-Client** mode. Reference installation: ES Nordic Plus 11 kW split, outdoor unit NP11-V7-S, refrigerant R410A, controller software V2.05. The supported model and firmware matrix has not yet been documented. Compatibility with other ES models or bridges is unverified.
+
+## Upgrading from 0.1.0
+
+- Unique IDs, entity IDs and raw states do not change. Friendly names change unless you renamed an entity yourself.
+- Live 29 is now **Outdoor Coil Temp (Tp)**; it was mislabelled as suction temperature. Suction temperature is live 28, **Suction Temp (Ts)**.
+- Units added to previously unitless live values: live 28 → °C, live 31 → rpm, live 41 and 42 → K (temperature difference). Home Assistant may raise statistics notices for these; history is not deleted and no unit conversion is applied.
+- Live 40 is a dimensionless compressor control level, not a frequency. Live 24/25 pressures carry `pressure_reference: gauge (inferred)`.
+- The reheating DHW target keeps its `..._daytime_target_temperature` entity ID but is named **Hot Water Reheating Target Temperature**.
 
 ## Installation
 
@@ -43,7 +52,8 @@ es_heatpump_local:
 - One pump per listener is the intended setup. Multiple pumps on the same listener would mix telemetry; use only one. Multiple entries and their entity IDs are not fully supported.
 - The telemetry parser checks framing and field counts but **does not validate CRC**. The retained experimental command code has separate CRC checks.
 - Values remain available after a disconnect once received; check connection diagnostics and the last-frame timestamp before trusting them as current.
-- Some sensor names and units are inferred from one controller. Confirm their meaning for your installation. The historical “daytime” DHW label refers to the reheating target; actual use depends on controller schedules.
+- Some sensor names and units are inferred from one controller (`label_confidence: inferred`), for example the P0-correlated signal, the compressor control level and the superheat values. Confirm their meaning for your installation.
+- Settings labelled `unverified` still need checking. Portal ranges and options are reference metadata, not safe write limits.
 - Malformed frames can close a connection. Parser hardening, stale-value handling and broader compatibility testing remain unfinished.
 - No minimum supported Home Assistant version has been established. This public package has not been installed on a second Home Assistant instance.
 
@@ -76,7 +86,9 @@ When reporting compatibility, include the heat pump model, controller/bridge ver
 
 ## По-русски
 
-Неофициальная незавершённая интеграция для локального чтения данных теплового насоса ES (Energy Save). Основана на работающей установке с USR-W600. Совместимость с другими моделями пока не подтверждена.
+Неофициальная незавершённая интеграция для локального чтения данных теплового насоса ES (Energy Save). Основана на работающей установке с USR-W600 (ES Nordic Plus 11 кВт, сплит, R410A). Совместимость с другими моделями пока не подтверждена.
+
+В 0.2.0 настройки подписаны названиями полей портала myheatpump.com (72 проверены на эталонной установке, 56 ещё не проверены), исправлена подпись live 29 (это Tp, температура ламелей наружного блока; всасывание Ts — live 28), добавлены единицы и пометки достоверности. Идентификаторы сущностей не меняются.
 
 Скопируйте `custom_components/es_heatpump_local` в каталог конфигурации Home Assistant, перезапустите HA и добавьте **ES Heatpump Local** через настройки. Насос через TCP-мост должен отправлять данные на локальный адрес HA, порт `18899`. Поле Bind address — адрес прослушивания HA, обычно `0.0.0.0`.
 
