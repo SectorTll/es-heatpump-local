@@ -16,6 +16,8 @@ The source was extracted from a working Home Assistant installation using a **US
 
 ## Installation
 
+**Bridge setup:** [USR-W600 step-by-step guide](docs/USR-W600-setup.md) · [Пошаговая настройка на русском](docs/USR-W600-setup.ru.md). Includes the exact Socket B fields, first-time Wi-Fi setup, verification and cloud rollback.
+
 1. Download this repository and copy `custom_components/es_heatpump_local` into your Home Assistant `config/custom_components/` directory.
 2. Restart Home Assistant.
 3. Open **Settings → Devices & services → Add integration → ES Heatpump Local**.
