@@ -29,6 +29,14 @@ Example: for HA at `http://192.168.1.50:8123`, enter **192.168.1.50** as the ser
 
 For an existing working cloud setup, normally only the server address changes. Preserve Wi-Fi, Socket A and serial settings. Do not copy the screenshot's serial baud rate to a different controller.
 
+**Manual p. 8: the screenshot shows the cloud destination `www.myheatpump.com`. For local operation, enter your HA host's IP in that field instead.**
+
+![Trans Setting and Socket B configuration from the ES manual](images/socket-b.png)
+
+Select **Restart** after saving (manual p. 8):
+
+![Restart button on the Save Success screen](images/restart.png)
+
 **Do not factory-reset a working module merely to change the server.** The manual states that Reset erases its configuration (pp. 3–4). The web page's Restart applies settings without a factory reset. This procedure does not require restarting the whole heat pump.
 
 ## First-time Wi-Fi setup only
@@ -45,6 +53,14 @@ Skip this section if the module is already on your home network.
 
 If the access point is missing, first look for the module on your router. Holding physical Reset for 10 seconds is the manual's factory-reset procedure, with loss of configuration, not a normal redirection step.
 
+**WiFi Setting → STA mode → Search**, manual p. 6:
+
+![Select STA mode and search for the home Wi-Fi network](images/wifi-sta.png)
+
+**STA Password → Save**, manual p. 7. Enter your own Wi-Fi password:
+
+![Home Wi-Fi SSID, password and Save fields](images/wifi-password.png)
+
 ## Verify and troubleshoot
 
 - In HA, check **Connected clients**, increasing **Frames received / Short frames received / Long frames received**, and a current **Last frame at** timestamp. Compare incoming water temperatures with the controller display.
@@ -56,6 +72,10 @@ If the access point is missing, first look for the module on your router. Holdin
 - Cannot open `10.10.100.254`: this is the setup access-point address; use the router-assigned IP when on the home LAN.
 - HA bind error: resolve another listener using the port, or select another free port on both sides.
 
+The controller screenshot (manual p. 9) distinguishes **Connection to the router** from **Connection to the server**. This shows a router connection, not proof of HA reception:
+
+![Router and server connection indicators on the ES controller](images/router-status.png)
+
 ## Restore cloud access
 
 Restore the saved Socket B settings and select **Save → Restart**. The guide uses `TCP-Client`, port `18899`, server `www.myheatpump.com`; restore your own original server if different. Verify new data on the portal.
@@ -63,3 +83,5 @@ Restore the saved Socket B settings and select **Save → Restart**. The guide u
 Redirecting Socket B stops sending its stream to the vendor cloud. Installer access, cloud history and cloud error notifications may stop updating. This integration neither relays data to the cloud nor replaces those notifications. Restoring the cloud destination stops this stream reaching HA.
 
 Local operation needs no cloud account, MAC registration or myheatpump.com credentials. The account/portal instructions on pages 9–14 of the original manual are not local integration setup steps.
+
+Images are excerpts from pages 6–9 of the ES manual, with screen contents unchanged. Original illustration rights remain with their respective owners; the project's MIT code license does not apply to these images. [Image provenance](images/README.md).
