@@ -1,0 +1,12 @@
+{
+  "domain": "es_heatpump_local",
+  "name": "ES Heatpump Local",
+  "version": "0.1.0-alpha.1",
+  "documentation": "https://github.com/SectorTll/es-heatpump-local",
+  "issue_tracker": "https://github.com/SectorTll/es-heatpump-local/issues",
+  "dependencies": [],
+  "codeowners": ["@SectorTll"],
+  "requirements": [],
+  "iot_class": "local_push",
+  "config_flow": true
+}

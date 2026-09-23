@@ -1,0 +1,41 @@
+test_dhw_target:
+  name: Test local DHW target (disabled in public alpha)
+  description: Experimental local write limited to 49/50 C, confirmed by a fresh pump packet. Does not automatically restore the previous temperature.
+  fields:
+    temperature:
+      required: true
+      selector:
+        number:
+          min: 49
+          max: 50
+          step: 1
+          mode: box
+    expected_temperature:
+      required: true
+      selector:
+        number:
+          min: 49
+          max: 50
+          step: 1
+          mode: box
+
+set_dhw_target:
+  name: Set local DHW target (disabled in public alpha)
+  description: Set the main DHW target locally (45-55 C, whole degrees), checking the expected current value and confirming by pump telemetry. Does not force compressor operation or change DHW reheating target.
+  fields:
+    temperature:
+      required: true
+      selector:
+        number:
+          min: 45
+          max: 55
+          step: 1
+          mode: box
+    expected_temperature:
+      required: true
+      selector:
+        number:
+          min: 45
+          max: 55
+          step: 1
+          mode: box
