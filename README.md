@@ -7,13 +7,23 @@ Experimental local Home Assistant integration for Energy Save (ES) heat pumps us
 ## What works
 
 - A local TCP listener receives data pushed by the heat pump bridge, without a cloud account.
-- Decodes 45 live values and 136 settings from the observed protocol. Live values show their portal address (`portal_realdata_parameter`), a `label_confidence` and notes; unknown live values keep raw index names.
+- Accepts the legacy 45-live / 136-settings frames and extended V2.38 frames (45 or 67 live values; 138 or 170 settings), with CRC validation. The existing 45 live and 136 settings sensors keep their IDs. Extra fields are parsed internally but do not yet create additional entities.
+- Sends telemetry acknowledgements and requests missing updates. The protocol identity is learned separately for each connection; no original device identifier is included and learning an identity does not enable settings writes.
+- Live values show their portal address (`portal_realdata_parameter`), a `label_confidence` and notes; unknown live values keep raw index names.
 - Named sensors for selected temperatures, working mode, compressor speed and control level, refrigerant pressures and superheat, and other mapped values.
 - Settings are named after the myheatpump.com portal labels: 72 verified against the reference installation, 56 unverified, 8 unknown. See the [field dictionary](docs/FIELDS.md). Settings sensors are disabled by default and can be enabled individually.
 - Named main and reheating DHW temperature setpoints.
 - Connection and frame diagnostics; UI setup and YAML import.
 
 The source was extracted from a working Home Assistant installation using a **USR-W600** bridge in **Transparent / Socket B TCP-Client** mode. Reference installation: ES Nordic Plus 11 kW split, outdoor unit NP11-V7-S, refrigerant R410A, controller software V2.05. The supported model and firmware matrix has not yet been documented. Compatibility with other ES models or bridges is unverified.
+
+## Upgrading to 0.2.2-alpha.1
+
+This release adds transport support for HeatStar V2.38. The shared ACK/request transport was checked on the reference V2.05 installation, and V2.38 behavior was checked using a local panel-code emulator. **V2.38 has not yet been tested on the physical panel.** The public connection-specific identity discovery is covered by synthetic and localhost tests, not a second hardware installation.
+
+Replace the integration directory and restart Home Assistant. Existing entity IDs and settings stay the same. This updates Home Assistant only; it does not install panel firmware or migrate its database. The new protocol does not add Smart Grid controls or enable DHW writes.
+
+Monitoring now sends ACK (types 3/4) and read-request (types 6/7) packets. It waits for a valid live/settings frame before learning where to address them. This address is not authentication; keep the listener on a trusted LAN. See [protocol and validation notes](docs/PROTOCOL.md).
 
 ## Upgrading from 0.1.0
 
@@ -50,18 +60,18 @@ es_heatpump_local:
 
 - No `climate` entity, operating-mode control, arbitrary parameter writes or heater control.
 - One pump per listener is the intended setup. Multiple pumps on the same listener would mix telemetry; use only one. Multiple entries and their entity IDs are not fully supported.
-- The telemetry parser checks framing and field counts but **does not validate CRC**. The retained experimental command code has separate CRC checks.
+- The listener validates framing, length and CRC before using telemetry. CRC detects corruption; it does not authenticate the sender. The observed framing supports unit prefix `01` only.
 - Values remain available after a disconnect once received; check connection diagnostics and the last-frame timestamp before trusting them as current.
 - Some sensor names and units are inferred from one controller (`label_confidence: inferred`), for example the P0-correlated signal, the compressor control level and the superheat values. Confirm their meaning for your installation.
 - Settings labelled `unverified` still need checking. Portal ranges and options are reference metadata, not safe write limits.
-- Malformed frames can close a connection. Parser hardening, stale-value handling and broader compatibility testing remain unfinished.
+- Invalid checksums and unusable payloads are skipped; implausible lengths and bad terminators trigger stream resynchronization. Silent connections and peers with excessive queued output are closed. Broader compatibility and stale-value handling remain unfinished.
 - No minimum supported Home Assistant version has been established. This public package has not been installed on a second Home Assistant instance.
 
 ## Experimental DHW command code
 
 The original installation successfully used local writes to the main DHW target, with whole-degree limits of 45–55 °C, an expected-current-value check, fresh CRC-verified telemetry, a single verified connection and confirmation from a subsequent packet. This does not force compressor operation or change the reheating target. A timeout leaves the outcome unknown; there is no automatic retry or temperature restoration.
 
-That implementation was pinned to the original device's eight-byte protocol identity. The private identity has been removed (`IDENTITY = None`), and both exposed DHW actions fail with a clear error in this public alpha. The code is retained for research, **not as ready-to-use control support for other pumps**. Generalized device identification and compatibility verification are still needed.
+That implementation was pinned to the original device's eight-byte protocol identity. The private identity has been removed (`IDENTITY = None`), and both exposed DHW actions fail with a clear error in this public alpha. The connection identity used for telemetry acknowledgements and read requests never fills that write pin. The code is retained for research, **not as ready-to-use control support for other pumps**. Generalized write authorization and compatibility verification are still needed.
 
 House-specific probe aliases, captures, logs, credentials, Home Assistant configuration and the separate DHW scheduling automation are not included.
 
@@ -80,7 +90,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q custom_components tests
 ```
 
-Tests use synthetic data and do not connect to hardware. They do not replace Home Assistant runtime testing.
+Tests use synthetic data, stubbed Home Assistant classes and a localhost TCP listener. They do not connect to hardware or require vendor firmware, and do not replace Home Assistant runtime testing.
 
 When reporting compatibility, include the heat pump model, controller/bridge version and which readings match the controller display. Remove device identifiers and personal network details from diagnostics before sharing them.
 
@@ -89,6 +99,8 @@ When reporting compatibility, include the heat pump model, controller/bridge ver
 Неофициальная незавершённая интеграция для локального чтения данных теплового насоса ES (Energy Save). Основана на работающей установке с USR-W600 (ES Nordic Plus 11 кВт, сплит, R410A). Совместимость с другими моделями пока не подтверждена.
 
 В 0.2.0 настройки подписаны названиями полей портала myheatpump.com (72 проверены на эталонной установке, 56 ещё не проверены), исправлена подпись live 29 (это Tp, температура ламелей наружного блока; всасывание Ts — live 28), добавлены единицы и пометки достоверности. Идентификаторы сущностей не меняются.
+
+В 0.2.2-alpha.1 добавлены подтверждения пакетов, запросы свежих данных, проверка CRC и приём расширенных кадров V2.38. Дополнительные поля пока не создают новые сущности. Обмен с V2.05 проверен на эталонной установке, V2.38 — в эмуляторе; на настоящей панели V2.38 ещё не проверялась. Публичное определение адреса подключившегося устройства проверено синтетическими тестами и через локальный TCP. Обновление относится только к HA; программу и базу панели оно не меняет.
 
 Скопируйте `custom_components/es_heatpump_local` в каталог конфигурации Home Assistant, перезапустите HA и добавьте **ES Heatpump Local** через настройки. Насос через TCP-мост должен отправлять данные на локальный адрес HA, порт `18899`. Поле Bind address — адрес прослушивания HA, обычно `0.0.0.0`.
 

@@ -15,6 +15,11 @@ from .const import (
 )
 
 
+# The length field counts the type byte, two more bytes and the values. The longest frame seen
+# (170 values, panel program V2.38) declares 683; anything far beyond is not a frame.
+MAX_DECLARED_LENGTH = 2048
+
+
 @dataclass(slots=True, frozen=True)
 class ParsedFrame:
     """A decoded protocol frame."""
@@ -43,25 +48,35 @@ def extract_frames(buffer: bytearray) -> list[bytes]:
             break
 
         declared = int.from_bytes(buffer[10:12], "little")
+        if not 3 <= declared <= MAX_DECLARED_LENGTH:
+            # Not a frame start (or a damaged length field). Waiting for that many bytes
+            # would swallow the real frames that follow: move on by one byte instead.
+            del buffer[:1]
+            continue
         total_length = declared + 15
 
         if len(buffer) < total_length:
             break
 
-        frame = bytes(buffer[:total_length])
-        del buffer[:total_length]
-
-        if frame[-1] != FRAME_END:
+        if buffer[total_length - 1] != FRAME_END:
             # Resync: the stream looked frame-like but the terminator is wrong.
+            del buffer[:1]
             continue
 
-        frames.append(frame)
+        frames.append(bytes(buffer[:total_length]))
+        del buffer[:total_length]
 
     return frames
 
 
 def parse_frame(frame: bytes) -> ParsedFrame:
-    """Decode a single complete frame into float sensors."""
+    """Decode a single complete frame into float sensors.
+
+    The panel program sends more values in newer versions: V2.05 sends 45 live and 136
+    settings values, V2.38 sends 45 or 67 live and 138 or 170 settings values. The known
+    values keep their positions, so a longer frame is accepted and its extra values get
+    the next numbers. A frame with fewer values than the known set is rejected.
+    """
     frame_type = frame[12]
     payload = frame[15:-3]
     checksum = int.from_bytes(frame[-3:-1], "little")
@@ -72,18 +87,18 @@ def parse_frame(frame: bytes) -> ParsedFrame:
     values = struct.unpack("<" + "f" * (len(payload) // 4), payload)
 
     if frame_type == FRAME_TYPE_SHORT:
-        expected_count = SHORT_SENSOR_COUNT
-        keys = [f"short_{idx:02d}" for idx in range(1, expected_count + 1)]
+        minimum_count = SHORT_SENSOR_COUNT
+        keys = [f"short_{idx:02d}" for idx in range(1, len(values) + 1)]
     elif frame_type == FRAME_TYPE_LONG:
-        expected_count = LONG_SENSOR_COUNT
-        keys = [f"long_{idx:03d}" for idx in range(1, expected_count + 1)]
+        minimum_count = LONG_SENSOR_COUNT
+        keys = [f"long_{idx:03d}" for idx in range(1, len(values) + 1)]
     else:
+        minimum_count = 0
         keys = [f"type_{frame_type:02d}_{idx:03d}" for idx in range(1, len(values) + 1)]
-        expected_count = len(values)
 
-    if len(values) != expected_count:
+    if len(values) < minimum_count:
         raise ValueError(
-            f"Unexpected float count for frame type {frame_type}: {len(values)} != {expected_count}"
+            f"Too few values for frame type {frame_type}: {len(values)} < {minimum_count}"
         )
 
     parsed_values = {key: round(value, 4) for key, value in zip(keys, values, strict=True)}

@@ -25,11 +25,21 @@ class FakeReader:
     async def read(self, size):
         return await self.queue.get()
 
+    def exception(self):
+        return None
+
 
 class FakeWriter:
     def __init__(self, close_error=None):
         self.close_error = close_error
         self.closed = False
+        self.transport = self
+
+    def get_write_buffer_size(self):
+        return 0
+
+    def abort(self):
+        self.closed = True
 
     def get_extra_info(self, name):
         return ("192.0.2.10", 40000) if name == "peername" else None

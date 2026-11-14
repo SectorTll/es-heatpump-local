@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2-alpha.1
+
+- Accept extended HeatStar V2.38 telemetry: 45/67 live values and 138/170 settings, while retaining V2.05's 45/136 format. Existing entities keep their IDs; extra fields are parsed internally without creating new entities.
+- Acknowledge valid live/settings frames (types 3/4) and request missing updates (types 6/7). Learn the telemetry identity from the first usable, CRC-checked frame on each connection. Ignore a different identity until reconnect; no original device identifiers are distributed. Settings writes remain disabled, including after telemetry discovery.
+- Validate CRC before publishing telemetry, recover from implausible lengths and bad terminators, and skip unusable payloads. Close silent or backpressured connections and handle socket timeouts without a busy loop.
+- Keep experimental DHW confirmation compatible with longer settings frames and a 150-second wait; it remains unavailable in the public build.
+- Add synthetic frame, identity isolation, write-disable, request timing, backpressure and localhost TCP tests. All 36 offline tests pass locally.
+- Validation limits: shared transport checked on the reference V2.05 installation; V2.38 checked in a local panel-code emulator, not on the physical panel. Public identity discovery checked offline and over localhost only. No firmware, databases or private captures are included.
+
 ## 0.2.1-alpha.1
 
 - A bridge that resets the TCP connection while it is being closed no longer logs a `ConnectionResetError` traceback; the channel, pending command and client counter are cleaned up as before, and reconnection works. Task cancellation is still propagated.
