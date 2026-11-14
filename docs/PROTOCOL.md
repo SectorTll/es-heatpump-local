@@ -1,4 +1,4 @@
-# Telemetry transport in 0.2.2-alpha.1
+# Telemetry transport in 0.3.0-alpha.1
 
 This documents the observed protocol and the scope of validation. It is not a complete vendor specification or a guide to changing heat-pump settings.
 

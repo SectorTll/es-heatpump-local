@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.2.2-alpha.1
+## 0.3.0-alpha.1
+
+Feature release for the new telemetry transport. Supersedes the initial `0.2.2-alpha.1` publication with the same functionality.
 
 - Accept extended HeatStar V2.38 telemetry: 45/67 live values and 138/170 settings, while retaining V2.05's 45/136 format. Existing entities keep their IDs; extra fields are parsed internally without creating new entities.
 - Acknowledge valid live/settings frames (types 3/4) and request missing updates (types 6/7). Learn the telemetry identity from the first usable, CRC-checked frame on each connection. Ignore a different identity until reconnect; no original device identifiers are distributed. Settings writes remain disabled, including after telemetry discovery.
@@ -8,6 +10,10 @@
 - Keep experimental DHW confirmation compatible with longer settings frames and a 150-second wait; it remains unavailable in the public build.
 - Add synthetic frame, identity isolation, write-disable, request timing, backpressure and localhost TCP tests. All 36 offline tests pass locally.
 - Validation limits: shared transport checked on the reference V2.05 installation; V2.38 checked in a local panel-code emulator, not on the physical panel. Public identity discovery checked offline and over localhost only. No firmware, databases or private captures are included.
+
+## 0.2.2-alpha.1
+
+- Initial publication of the transport changes described above. Superseded by `0.3.0-alpha.1` to identify this as a feature release; no functional changes between the two tags.
 
 ## 0.2.1-alpha.1
 

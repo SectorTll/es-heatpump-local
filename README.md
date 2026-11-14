@@ -17,7 +17,7 @@ Experimental local Home Assistant integration for Energy Save (ES) heat pumps us
 
 The source was extracted from a working Home Assistant installation using a **USR-W600** bridge in **Transparent / Socket B TCP-Client** mode. Reference installation: ES Nordic Plus 11 kW split, outdoor unit NP11-V7-S, refrigerant R410A, controller software V2.05. The supported model and firmware matrix has not yet been documented. Compatibility with other ES models or bridges is unverified.
 
-## Upgrading to 0.2.2-alpha.1
+## Upgrading to 0.3.0-alpha.1
 
 This release adds transport support for HeatStar V2.38. The shared ACK/request transport was checked on the reference V2.05 installation, and V2.38 behavior was checked using a local panel-code emulator. **V2.38 has not yet been tested on the physical panel.** The public connection-specific identity discovery is covered by synthetic and localhost tests, not a second hardware installation.
 
@@ -100,7 +100,7 @@ When reporting compatibility, include the heat pump model, controller/bridge ver
 
 В 0.2.0 настройки подписаны названиями полей портала myheatpump.com (72 проверены на эталонной установке, 56 ещё не проверены), исправлена подпись live 29 (это Tp, температура ламелей наружного блока; всасывание Ts — live 28), добавлены единицы и пометки достоверности. Идентификаторы сущностей не меняются.
 
-В 0.2.2-alpha.1 добавлены подтверждения пакетов, запросы свежих данных, проверка CRC и приём расширенных кадров V2.38. Дополнительные поля пока не создают новые сущности. Обмен с V2.05 проверен на эталонной установке, V2.38 — в эмуляторе; на настоящей панели V2.38 ещё не проверялась. Публичное определение адреса подключившегося устройства проверено синтетическими тестами и через локальный TCP. Обновление относится только к HA; программу и базу панели оно не меняет.
+В 0.3.0-alpha.1 добавлены подтверждения пакетов, запросы свежих данных, проверка CRC и приём расширенных кадров V2.38. Дополнительные поля пока не создают новые сущности. Обмен с V2.05 проверен на эталонной установке, V2.38 — в эмуляторе; на настоящей панели V2.38 ещё не проверялась. Публичное определение адреса подключившегося устройства проверено синтетическими тестами и через локальный TCP. Обновление относится только к HA; программу и базу панели оно не меняет.
 
 Скопируйте `custom_components/es_heatpump_local` в каталог конфигурации Home Assistant, перезапустите HA и добавьте **ES Heatpump Local** через настройки. Насос через TCP-мост должен отправлять данные на локальный адрес HA, порт `18899`. Поле Bind address — адрес прослушивания HA, обычно `0.0.0.0`.
 
